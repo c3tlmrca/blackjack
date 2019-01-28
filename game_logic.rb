@@ -3,20 +3,11 @@ require './bank.rb'
 require './deck.rb'
 require './player.rb'
 require './dealer.rb'
+require './game_interface.rb'
 
 class GameLogic
   include Validation
 
-  WHATS_YOUR_MOVE = <<-DOC.freeze
-  \nYour move:
-  1. Hit.
-  2. Stand.
-  3. Open cards.
-  DOC
-  INVALID_INPUT = 'Invalide input.'.freeze
-  PUSH = 'Push!'.freeze
-  DEALER_CARDS = "\nDealer cards: ".freeze
-  PLAYER_CARDS = 'Your cards: '.freeze
   MOVES = (1..3).freeze
   HIT = 1
   STAND = 2
@@ -32,6 +23,7 @@ class GameLogic
     @dealer = Dealer.new
     @game_bank = Bank.new
     @deck = Deck.new
+    @game_interface = GameIntreface.new
     @opened_cards = false
     @game_over = false
   end
@@ -43,13 +35,13 @@ class GameLogic
   end
 
   def cards_clear
-    @player.cards.clear
-    @dealer.cards.clear
+    @player.hand.cards.clear
+    @dealer.hand.cards.clear
   end
 
   def reset_points
-    @player.points = 0
-    @dealer.points = 0
+    @player.hand.points = 0
+    @dealer.hand.points = 0
   end
 
   def deal_cards
@@ -60,7 +52,7 @@ class GameLogic
       hit(@dealer)
     end
     show_players_cards
-    show_dealer_cards { dealer_cards_hidden }
+    show_dealer_cards
   end
 
   def open_cards
@@ -71,8 +63,8 @@ class GameLogic
 
   def hit(person)
     random_card = @deck.cards.sample
-    person.cards << random_card
-    person.ace_correction
+    person.hand.cards << random_card
+    person.hand.ace_correction
     @deck.cards.delete(random_card)
   end
 
@@ -89,27 +81,27 @@ class GameLogic
   end
 
   def push?
-    @player.calculate_points
-    @dealer.calculate_points
+    @player.hand.calculate_points
+    @dealer.hand.calculate_points
     true if @player.points.eql?(@dealer.points)
   end
 
   def player_won
     @game_bank.take_cash(WINNING_BET)
     @player.bank.add_cash(WINNING_BET)
-    @player.win_bet
+    @game_interface.win_bet(@player)
   end
 
   def dealer_won
     @game_bank.take_cash(WINNING_BET)
     @dealer.bank.add_cash(WINNING_BET)
-    @dealer.win_bet
+    @game_interface.win_bet(@dealer)
   end
 
   def push
-    puts PUSH
+    @game_interface.push
     show_players_cards
-    show_dealer_cards { dealer_cards_unhidden }
+    show_dealer_cards
     @game_bank.take_cash(WINNING_BET)
     @player.bank.return_cash
     @dealer.bank.return_cash
@@ -125,48 +117,28 @@ class GameLogic
       dealer_won
     end
     show_players_cards
-    show_dealer_cards { dealer_cards_unhidden }
+    show_dealer_cards
     show_points
     show_cash
   end
 
   def show_players_cards
-    print PLAYER_CARDS
-    @player.show_each_card
-    @player.calculate_points
+    @game_interface.show_cards_unhidden(@player)
+    @player.hand.calculate_points
   end
 
-  def show_dealer_cards
-    print DEALER_CARDS
-    yield if block_given?
-    @dealer.calculate_points
-  end
-
-  def show_points
-    print "\nYour points: #{@player.points}"
-    print "\nDealer Points: #{@dealer.points}"
-  end
-
-  def show_cash
-    puts "\nPlayer bank: #{@player.bank.cash}"
-    puts "Dealer bank: #{@dealer.bank.cash}\n"
-  end
-
-  def dealer_cards_hidden
-    @dealer.cards.length.times { print '* ' }
-  end
-
-  def dealer_cards_unhidden
-    @dealer.show_each_card
+  def show_dealer_cards_unhiden
+    @game_interface.show_cards_unhidden(@dealer)
+    @dealer.hand.calculate_points
   end
 
   def player_move
     loop do
       input = players_move
       hit(@player) if input.equal?(HIT)
-      break dealer_won, (self.game_over = true) if @player.busted?
+      break dealer_won, (self.game_over = true) if @player.hand.busted?
 
-      break @player.stand if input.equal?(STAND)
+      break @game_interface.stand(@player) if input.equal?(STAND)
 
       break open_cards if input.equal?(OPEN_CARDS)
 
@@ -176,18 +148,9 @@ class GameLogic
     end
   end
 
-  def invalide_input
-    puts INVALID_INPUT
-  end
-
-  def players_move
-    puts WHATS_YOUR_MOVE
-    gets.to_i
-  end
-
   def dealer_move
-    return @dealer.stand if @dealer.points >= MAX_DEALERS_POINTS
-    return hit(@dealer) if @dealer.points < MAX_DEALERS_POINTS
-    return player_won, (self.game_over = true) if @dealer.busted?
+    return @game_interface.stand(@dealer) if @dealer.hand.points >= MAX_DEALERS_POINTS
+    return hit(@dealer) if @dealer.hand.points < MAX_DEALERS_POINTS
+    return player_won, (self.game_over = true) if @dealer.hand.busted?
   end
 end
