@@ -8,7 +8,7 @@ class Player
   NAME_FORMAT = /\w+/.freeze
 
   attr_reader :name
-  attr_accessor :bank, :cards, :bet, :points
+  attr_accessor :bank, :cards, :bet, :points, :hand
 
   validate :name, :format, NAME_FORMAT
 

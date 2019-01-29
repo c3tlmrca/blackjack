@@ -8,8 +8,8 @@ require './game_logic.rb'
 class Main
   attr_accessor :game
 
-  def initialize(player_name)
-    @game = GameLogic.new(player_name)
+  def initialize
+    @game = GameLogic.new
   end
 
   def start_game
@@ -17,10 +17,10 @@ class Main
       @game.deal_cards
       @game.accept_bets
       @game.moves
-      play_still
+      @game.game_interface.play_still
     end
   end
 end
 
-main = Main.new(player_name)
+main = Main.new
 main.start_game

@@ -10,16 +10,16 @@ class GameInterface
   BUSTED = 'Busted!'.freeze
   STAND = 'Stand!'.freeze
   PLAYER_NAME = 'Enter your name: '.freeze
-  PLAY_STILL = 'Continue?(y/n)'.freeze
+  PLAY_STILL = "\nContinue?(y/n)".freeze
   EXIT = 'n'.freeze
   CONTINUE = 'y'.freeze
 
   def show_points(player)
-    print "\n#{player.name} points: #{player.points}."
+    print "\n#{player.class} points: #{player.hand.points}."
   end
 
   def show_cash(player)
-    print "\n#{player.name} bank: #{player.bank.cash}."
+    print "\n#{player.class} bank: #{player.bank.cash}."
   end
 
   def win_bet(player)
@@ -30,16 +30,30 @@ class GameInterface
     print "\n#{player.class} #{STAND}"
   end
 
-  def show_cards_unhidden(player)
-    player.cards.each { |card| each_card(card) }
+  def busted(player)
+    print "\n#{player.class} is #{BUSTED}"
+  end
+
+  def print_player_name(player)
+    print "\n#{player.class}: "
   end
 
   def show_cards_hidden(player)
-    player.cards.each { puts '* ' }
+    print_player_name(player)
+    player.hand.cards.each { card_hidden }
   end
 
-  def each_card(card)
-    puts "#{card.rank}#{card.suit}"
+  def show_cards_unhidden(player)
+    print_player_name(player)
+    player.hand.cards.each { |card| card_unhidden(card) }
+  end
+
+  def card_hidden
+    print '* '
+  end
+
+  def card_unhidden(card)
+    print "#{card.suit}#{card.rank} "
   end
 
   def invalide_input
@@ -47,7 +61,7 @@ class GameInterface
   end
 
   def push
-    print "\nPUSH"
+    print "\n#{PUSH}"
   end
 
   def players_move

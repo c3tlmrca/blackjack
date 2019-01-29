@@ -1,3 +1,5 @@
+require './card.rb'
+
 class Hand
   MAX_POINTS = 21
   ACE_CORRECTION = 10
@@ -33,5 +35,9 @@ class Hand
   def busted?
     calculate_points
     true if points > MAX_POINTS
+  end
+
+  def win?(player)
+    true if @points > player.hand.points
   end
 end

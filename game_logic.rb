@@ -16,14 +16,14 @@ class GameLogic
   MAX_DEALERS_POINTS = 17
   WINNING_BET = 20
 
-  attr_accessor :game_bank, :deck, :player, :dealer, :game_over
+  attr_accessor :game_bank, :deck, :player, :dealer, :game_over, :game_interface
 
-  def initialize(player_name)
-    @player = Player.new(player_name)
+  def initialize
+    @player = Player.new
     @dealer = Dealer.new
     @game_bank = Bank.new
     @deck = Deck.new
-    @game_interface = GameIntreface.new
+    @game_interface = GameInterface.new
     @opened_cards = false
     @game_over = false
   end
@@ -52,12 +52,12 @@ class GameLogic
       hit(@dealer)
     end
     show_players_cards
-    show_dealer_cards
+    show_dealer_cards_hidden
   end
 
   def open_cards
-    @player.open_cards
-    @dealer.open_cards
+    show_players_cards
+    show_dealer_cards_unhidden
     @opened_cards = true
   end
 
@@ -83,43 +83,55 @@ class GameLogic
   def push?
     @player.hand.calculate_points
     @dealer.hand.calculate_points
-    true if @player.points.eql?(@dealer.points)
+    true if @player.hand.points.eql?(@dealer.hand.points)
   end
 
   def player_won
     @game_bank.take_cash(WINNING_BET)
     @player.bank.add_cash(WINNING_BET)
     @game_interface.win_bet(@player)
+    end_game
   end
 
   def dealer_won
     @game_bank.take_cash(WINNING_BET)
     @dealer.bank.add_cash(WINNING_BET)
     @game_interface.win_bet(@dealer)
+    end_game
+  end
+
+  def end_game
+    show_players_cards
+    show_dealer_cards_unhidden
+    show_points
+    show_bank
   end
 
   def push
     @game_interface.push
-    show_players_cards
-    show_dealer_cards
     @game_bank.take_cash(WINNING_BET)
     @player.bank.return_cash
     @dealer.bank.return_cash
-    show_points
-    show_cash
+    end_game
+  end
+
+  def show_points
+    @game_interface.show_points(@player)
+    @game_interface.show_points(@dealer)
   end
 
   def determine_winner
     @game_bank.take_cash(WINNING_BET)
-    if @player.win?(@dealer)
+    if @player.hand.win?(@dealer)
       player_won
-    elsif @dealer.win?(@player)
+    elsif @dealer.hand.win?(@player)
       dealer_won
     end
-    show_players_cards
-    show_dealer_cards
-    show_points
-    show_cash
+  end
+
+  def show_bank
+    @game_interface.show_cash(@player)
+    @game_interface.show_cash(@dealer)
   end
 
   def show_players_cards
@@ -127,16 +139,22 @@ class GameLogic
     @player.hand.calculate_points
   end
 
-  def show_dealer_cards_unhiden
+  def show_dealer_cards_unhidden
     @game_interface.show_cards_unhidden(@dealer)
+    @dealer.hand.calculate_points
+  end
+
+  def show_dealer_cards_hidden
+    @game_interface.show_cards_hidden(@dealer)
     @dealer.hand.calculate_points
   end
 
   def player_move
     loop do
-      input = players_move
+      input = @game_interface.players_move
       hit(@player) if input.equal?(HIT)
-      break dealer_won, (self.game_over = true) if @player.hand.busted?
+      break @game_interface.busted(@player), dealer_won, (self.game_over = true)\
+       if @player.hand.busted?
 
       break @game_interface.stand(@player) if input.equal?(STAND)
 
@@ -151,6 +169,7 @@ class GameLogic
   def dealer_move
     return @game_interface.stand(@dealer) if @dealer.hand.points >= MAX_DEALERS_POINTS
     return hit(@dealer) if @dealer.hand.points < MAX_DEALERS_POINTS
-    return player_won, (self.game_over = true) if @dealer.hand.busted?
+    return @game_interface.busted(@dealer), player_won, (self.game_over = true)\
+     if @dealer.hand.busted?
   end
 end
