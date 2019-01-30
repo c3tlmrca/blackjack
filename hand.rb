@@ -28,7 +28,8 @@ class Hand
   end
 
   def include_ace?
-    cards.each { |card| return true if card.rank.include?('A') }
+    return true if cards.each { |card| return true if card.rank.include?('A') }
+
     false
   end
 

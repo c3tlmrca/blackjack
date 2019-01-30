@@ -19,13 +19,13 @@ class GameLogic
   attr_accessor :game_bank, :deck, :player, :dealer, :game_over, :game_interface
 
   def initialize
-    @player = Player.new
+    @game_interface = GameInterface.new
+    player_name = @game_interface.player_name
+    @player = Player.new(player_name)
     @dealer = Dealer.new
     @game_bank = Bank.new
     @deck = Deck.new
-    @game_interface = GameInterface.new
     @opened_cards = false
-    @game_over = false
   end
 
   def accept_bets
@@ -72,9 +72,10 @@ class GameLogic
     player_move
     return determine_winner if @opened_cards
 
-    return if @game_over
+    return @game_interface.busted(@player), dealer_won if @player.hand.busted?
 
     dealer_move
+    return @game_interface.busted(@dealer), player_won if @dealer.hand.busted?
     return push if push?
 
     determine_winner
@@ -153,14 +154,12 @@ class GameLogic
     loop do
       input = @game_interface.players_move
       hit(@player) if input.equal?(HIT)
-      break @game_interface.busted(@player), dealer_won, (self.game_over = true)\
-       if @player.hand.busted?
 
       break @game_interface.stand(@player) if input.equal?(STAND)
 
       break open_cards if input.equal?(OPEN_CARDS)
 
-      next invalide_input unless MOVES.include?(input)
+      next @game_interface.invalide_input unless MOVES.include?(input)
 
       break
     end
@@ -169,7 +168,5 @@ class GameLogic
   def dealer_move
     return @game_interface.stand(@dealer) if @dealer.hand.points >= MAX_DEALERS_POINTS
     return hit(@dealer) if @dealer.hand.points < MAX_DEALERS_POINTS
-    return @game_interface.busted(@dealer), player_won, (self.game_over = true)\
-     if @dealer.hand.busted?
   end
 end

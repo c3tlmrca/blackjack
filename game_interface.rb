@@ -6,13 +6,17 @@ class GameInterface
   3. Open cards.
   DOC
   INVALID_INPUT = 'Invalide input.'.freeze
-  PUSH = 'Push!'.freeze
-  BUSTED = 'Busted!'.freeze
-  STAND = 'Stand!'.freeze
+  PUSH = "\nPush!".freeze
+  CARD_HIDDEN = '* '.freeze
   PLAYER_NAME = 'Enter your name: '.freeze
   PLAY_STILL = "\nContinue?(y/n)".freeze
   EXIT = 'n'.freeze
   CONTINUE = 'y'.freeze
+
+  def player_name
+    print PLAYER_NAME
+    gets.strip
+  end
 
   def show_points(player)
     print "\n#{player.class} points: #{player.hand.points}."
@@ -27,11 +31,11 @@ class GameInterface
   end
 
   def stand(player)
-    print "\n#{player.class} #{STAND}"
+    print "\n#{player.class} Stand!"
   end
 
   def busted(player)
-    print "\n#{player.class} is #{BUSTED}"
+    print "\n#{player.class} is Busted!"
   end
 
   def print_player_name(player)
@@ -49,7 +53,7 @@ class GameInterface
   end
 
   def card_hidden
-    print '* '
+    print CARD_HIDDEN
   end
 
   def card_unhidden(card)
@@ -61,7 +65,7 @@ class GameInterface
   end
 
   def push
-    print "\n#{PUSH}"
+    print PUSH
   end
 
   def players_move
